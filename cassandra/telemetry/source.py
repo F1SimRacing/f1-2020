@@ -39,11 +39,11 @@ class Feed:
     def get_latest(self):
         packet = unpack_udp_packet(self.socket.recv(2048))
         p = format_packet_v2(packet)
-
-        try:
-            print(format_packet_v2(packet))
-        except Exception as exc:
-            print('asdf')
+        p['sessionTime'] = packet.header.sessionTime
+        # try:
+        #     print(format_packet_v2(packet))
+        # except Exception as exc:
+        #     print('asdf')
         # motion data for moving a freaking platform!
         # if 'suspensionPosition' in p:
         #     p['motionData'] = {}
@@ -129,16 +129,24 @@ def format_packet_v2(packet, players_car=True):
                 if hasattr(type(sub_field), '_fields_'):
                     for key in type(sub_field)._fields_:
                         print(getattr(sub_field, key[0]))
-                       # result[getattr(sub_field, key[0])]
+                        # result[getattr(sub_field, key[0])]
                 else:
                     # most likely suspensions or similar with an array of 4
-                    print(f'{top_level_field[0]} -> {sub_field[0]}, {sub_field[1]}, {sub_field[2]} ,{sub_field[3]}')
+ #                   print(f'{top_level_field[0]} -> {sub_field[0]}, {sub_field[1]},
+                    #                   {sub_field[2]} ,{sub_field[3]}')
+                    result[top_level_field[0]] = {
+                                'rl': sub_field[0],
+                                'rr': sub_field[1],
+                                'fl': sub_field[2],
+                                'fr': sub_field[3]
+                            }
     return result
 
 
-def extract_fields(packet, fields):
+def extract_top_level_fields(packet, fields):
     for field in fields:
         pass
+    
 
 def format_packet(packet):
     res = {}
