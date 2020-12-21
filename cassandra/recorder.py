@@ -11,43 +11,42 @@ logger = logging.getLogger(__name__)
 
 def main():
 
-    influx_conn = InfluxConnector()
-
+    influx_conn = InfluxConnector(host='192.168.0.100')
     logger.info('Starting server to receive telemetry data.')
     feed = Feed()
+    lap_number = 1
+
     while True:
         packet = feed.get_latest()
-        if packet['type'] == 'PacketCarTelemetryData_V1':
-            # data = []
-            # print(packet)
-            # for name, value in packet.items():
-            #     data.append(
-            #         {
-            #             "measurement": name,
-            #             "tags": {
-            #                 "type": "car_telemetry"
-            #             },
-            #             "time": packet['sessionTime'],
-            #             "fields": {
-            #                 "value": 0.64
-            #             }
-            #         }
-            #     )
 
-            data = []
-            print(f'engineRPM -> {packet["engineRPM"]}')
-            data.append(
-                {
-                    "measurement": "engineRPM",
-                    "tags": {
-                        "type": "car_telemetry"
-                    },
-                    # "time": packet['sessionTime'],
-                    "fields": {
-                        "value": packet['engineRPM']
+        data = []
+        if packet['type'] == 'PacketLapData_V1':
+            lap_number = packet['currentLapNum']
+
+        if packet['type'] in ['PacketCarTelemetryData_V1', 'PacketLapData_V1',
+                              'PacketMotionData_V1', 'PacketSessionData_V1',
+                              'PacketCarStatusData_V1']:
+
+            for name, value in packet.items():
+                if name in ['type', 'mfdPanelIndex',
+                            'buttonStatus']:
+                    continue
+
+                data.append(
+                    {
+                        "measurement": name,
+                        "tags": {
+                            "type": "car_telemetry",
+                            "track": "monza",
+
+                        },
+                        "fields": {
+                            "value": value,
+                            "lap": lap_number
+
+                        }
                     }
-                }
-            )
+                    )
             influx_conn.write_data(data)
 
 

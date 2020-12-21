@@ -39,7 +39,7 @@ class Feed:
     def get_latest(self):
         packet = unpack_udp_packet(self.socket.recv(2048))
         p = format_packet_v2(packet)
-        p['sessionTime'] = packet.header.sessionTime
+
         # try:
         #     print(format_packet_v2(packet))
         # except Exception as exc:
@@ -67,86 +67,120 @@ def format_packet_v2(packet, players_car=True):
     players_car = packet.header.playerCarIndex
 
     result = {
-        'type': packet_type.__name__
+        'type': packet_type.__name__,
+        'sessionTime': packet.header.sessionTime,
+        'sessionUID': float(packet.header.sessionUID)
     }
 
-    for top_level_field in packet_type._fields_:
-        if top_level_field[0] == 'header':
+    for field in packet_type._fields_:
+        field_name = field[0]
+
+        # maybe use this later to separate types?
+        # field_type = field[1]
+
+        if field_name == 'header':
             continue
 
-        sub_field = getattr(packet, top_level_field[0])
+        value = getattr(packet, field_name)
 
-        if isinstance(sub_field, numbers.Number):
-            result[top_level_field[0]] = sub_field
-            # print(f'{top_level_field[0]} {sub_field}')
-        else:
-            # fetch only the value from 22 array for the players number
+        try:
+            if isinstance(value, numbers.Number):
+                result[field_name] = value
+            # check if this is car or lap data, this means it's 22 elements long
+            # on entry per car on the track.
+            elif len(value) == 22:
+                result = extract_all_car_array(value, players_car, result)
+        except:
+            pass
 
-            # 0 – Rear Left(RL)
-            # 1 – Rear
-            # Right(RR)
-            # 2 – Front
-            # Left(FL)
-            # 3 – Front
-            # Right(FR)
-            try:
-                if isinstance(sub_field[players_car], numbers.Number):
-                    try:
-                        if len(sub_field) == 4:
-                            result[top_level_field[0]] = {
-                                'rl': sub_field[0],
-                                'rr': sub_field[1],
-                                'fl': sub_field[2],
-                                'fr': sub_field[3]
-                            }
-                        else:
-                            print('ffs')
-                        continue
-                    except Exception as exc:
-                        print('damn!')
-
-                for players_car_data in type(sub_field[players_car])._fields_:
-                    for attr_to_process in sub_field:
-                        sub_sub_value = getattr(attr_to_process, players_car_data[0])
-
-                        if isinstance(sub_sub_value, numbers.Number):
-                            result[players_car_data[0]] = sub_sub_value
-
-                        # deal with embedded types usually for tyres.
-                        # for example CarStatusData_V1_Array_22
-
-                        elif len(getattr(attr_to_process, players_car_data[0])) == 4:
-                            result[players_car_data[0]] = {
-                                'rl': getattr(attr_to_process, players_car_data[0])[0],
-                                'rr': getattr(attr_to_process, players_car_data[0])[1],
-                                'fl': getattr(attr_to_process, players_car_data[0])[2],
-                                'fr': getattr(attr_to_process, players_car_data[0])[3]
-                            }
-                        else:
-                            logger.info(f'Missed {players_car_data}')
-            except Exception as exc:
-
-                if hasattr(type(sub_field), '_fields_'):
-                    for key in type(sub_field)._fields_:
-                        print(getattr(sub_field, key[0]))
-                        # result[getattr(sub_field, key[0])]
-                else:
-                    # most likely suspensions or similar with an array of 4
- #                   print(f'{top_level_field[0]} -> {sub_field[0]}, {sub_field[1]},
-                    #                   {sub_field[2]} ,{sub_field[3]}')
-                    result[top_level_field[0]] = {
-                                'rl': sub_field[0],
-                                'rr': sub_field[1],
-                                'fl': sub_field[2],
-                                'fr': sub_field[3]
-                            }
+ #
+ #        sub_field = getattr(packet, top_level_field[0])
+ #
+ #        if isinstance(sub_field, numbers.Number):
+ #            result[top_level_field[0]] = sub_field
+ #            # print(f'{top_level_field[0]} {sub_field}')
+ #        else:
+ #            # fetch only the value from 22 array for the players number
+ #
+ #            # 0 – Rear Left(RL)
+ #            # 1 – Rear
+ #            # Right(RR)
+ #            # 2 – Front
+ #            # Left(FL)
+ #            # 3 – Front
+ #            # Right(FR)
+ #            try:
+ #                if isinstance(sub_field[players_car], numbers.Number):
+ #                    try:
+ #                        if len(sub_field) == 4:
+ #                            result[top_level_field[0]] = {
+ #                                'rl': sub_field[0],
+ #                                'rr': sub_field[1],
+ #                                'fl': sub_field[2],
+ #                                'fr': sub_field[3]
+ #                            }
+ #                        else:
+ #                            print('ffs')
+ #                        continue
+ #                    except Exception as exc:
+ #                        print('damn!')
+ #
+ #                for players_car_data in type(sub_field[players_car])._fields_:
+ #                    for attr_to_process in sub_field:
+ #                        sub_sub_value = getattr(attr_to_process, players_car_data[0])
+ #
+ #                        if isinstance(sub_sub_value, numbers.Number):
+ #                            result[players_car_data[0]] = sub_sub_value
+ #
+ #                        # deal with embedded types usually for tyres.
+ #                        # for example CarStatusData_V1_Array_22
+ #
+ #                        elif len(getattr(attr_to_process, players_car_data[0])) == 4:
+ #                            result[players_car_data[0]] = {
+ #                                'rl': getattr(attr_to_process, players_car_data[0])[0],
+ #                                'rr': getattr(attr_to_process, players_car_data[0])[1],
+ #                                'fl': getattr(attr_to_process, players_car_data[0])[2],
+ #                                'fr': getattr(attr_to_process, players_car_data[0])[3]
+ #                            }
+ #                        else:
+ #                            logger.info(f'Missed {players_car_data}')
+ #            except Exception as exc:
+ #
+ #                if hasattr(type(sub_field), '_fields_'):
+ #                    for key in type(sub_field)._fields_:
+ #                        print(getattr(sub_field, key[0]))
+ #                        # result[getattr(sub_field, key[0])]
+ #                else:
+ #                    # most likely suspensions or similar with an array of 4
+ # #                   print(f'{top_level_field[0]} -> {sub_field[0]}, {sub_field[1]},
+ #                    #                   {sub_field[2]} ,{sub_field[3]}')
+ #                    result[top_level_field[0]] = {
+ #                                'rl': sub_field[0],
+ #                                'rr': sub_field[1],
+ #                                'fl': sub_field[2],
+ #                                'fr': sub_field[3]
+ #                            }
     return result
 
 
-def extract_top_level_fields(packet, fields):
-    for field in fields:
-        pass
-    
+def extract_all_car_array(packet, players_car, result):
+
+    data = packet[players_car]
+
+    for field in data._fields_:
+        name = field[0]
+        value = getattr(data, name)
+
+        if isinstance(value, numbers.Number):
+            result[name] = value
+        elif isinstance(value, ctypes.Array) and len(value) == 4:
+            result[f'{name}_rl'] = value[0]
+            result[f'{name}_rr'] = value[1]
+            result[f'{name}_fl'] = value[2]
+            result[f'{name}_fr'] = value[3]
+
+    return result
+
 
 def format_packet(packet):
     res = {}
