@@ -34,15 +34,22 @@ def main():
     while True:
         packet = feed.get_latest()
 
-        data = []
-        if packet['type'] == 'PacketLapData_V1':
-            lap_number = packet['currentLapNum']
+        if not packet:
+            continue
 
+        data = []
         if packet['type'] == 'PacketSessionData_V1' and not race_details:
             race_details = Race(
                 circuit=TrackIDs[packet['trackId']],
                 total_laps=packet['totalLaps']
             )
+
+        # we are late, so spin until we find out which race we are at
+        if not race_details:
+            continue
+
+        if packet['type'] == 'PacketLapData_V1':
+            lap_number = packet['currentLapNum']
 
         if packet['type'] in PACKET_MAPPER.keys():
             for name, value in packet.items():
@@ -51,8 +58,9 @@ def main():
                     continue
 
                 # drivers name are bytes
-                if name == 'name':
-                    value = value.decode('utf-8')
+                if name == 'name' and packet['type'] == 'PacketParticipantsData_V1':
+                    if type(value) == bytes:
+                        value = value.decode('utf-8')
 
                 data.append(
                     {

@@ -13,21 +13,6 @@ logging.basicConfig(level=logging.INFO,
 
 logger = logging.getLogger(__name__)
 
-MOTION_FIELDS = ['suspensionPosition', 'suspensionVelocity', 'suspensionAcceleration',
-                 'wheelSpeed', 'wheelSlip', 'localVelocityX', 'localVelocityY',
-                 'localVelocityZ',
-                 'angularVelocityX', 'angularVelocityY', 'angularVelocityZ',
-                 'angularAccelerationX',
-                 'angularAccelerationY', 'angularAccelerationZ', 'frontWheelsAngle']
-
-SESSION_FIELDS = [
-    'weather', 'trackTemperature', 'airTemperature', 'totalLaps', 'trackLength',
-    'sessionType', 'trackId', 'm_formula', 'sessionTimeLeft', 'sessionDuration',
-    'pitSpeedLimit', 'gamePaused', 'isSpectating', 'spectatorCarIndex',
-    'sliProNativeSupport', 'numMarshalZones', 'marshalZones', 'safetyCarStatus',
-    'networkGame'
-]
-
 
 class Feed:
 
@@ -41,25 +26,6 @@ class Feed:
     def get_latest(self):
         packet = unpack_udp_packet(self.socket.recv(2048))
         p = format_packet_v2(packet)
-
-        # try:
-        #     print(format_packet_v2(packet))
-        # except Exception as exc:
-        #     print('asdf')
-        # motion data for moving a freaking platform!
-        # if 'suspensionPosition' in p:
-        #     p['motionData'] = {}
-        #     for i in MOTION_FIELDS:
-        #         p['motionData'][i] = p[i]
-        #         del p[i]
-        # if 'weather' in p:
-        #     p['sessionData'] = {}
-        #     for i in SESSION_FIELDS:
-        #         p['sessionData'][i] = p[i]
-        #         del p[i]
-        #
-        # if 'eventStringCode' in p:
-        #     p['eventStringCode'] = p['eventStringCode'].decode("utf-8", "strict")
         return p
 
 
@@ -98,74 +64,6 @@ def format_packet_v2(packet, players_car=True):
                 result = extract_all_car_array(value, players_car, result)
         except:
             pass
-
- #
- #        sub_field = getattr(packet, top_level_field[0])
- #
- #        if isinstance(sub_field, numbers.Number):
- #            result[top_level_field[0]] = sub_field
- #            # print(f'{top_level_field[0]} {sub_field}')
- #        else:
- #            # fetch only the value from 22 array for the players number
- #
- #            # 0 – Rear Left(RL)
- #            # 1 – Rear
- #            # Right(RR)
- #            # 2 – Front
- #            # Left(FL)
- #            # 3 – Front
- #            # Right(FR)
- #            try:
- #                if isinstance(sub_field[players_car], numbers.Number):
- #                    try:
- #                        if len(sub_field) == 4:
- #                            result[top_level_field[0]] = {
- #                                'rl': sub_field[0],
- #                                'rr': sub_field[1],
- #                                'fl': sub_field[2],
- #                                'fr': sub_field[3]
- #                            }
- #                        else:
- #                            print('ffs')
- #                        continue
- #                    except Exception as exc:
- #                        print('damn!')
- #
- #                for players_car_data in type(sub_field[players_car])._fields_:
- #                    for attr_to_process in sub_field:
- #                        sub_sub_value = getattr(attr_to_process, players_car_data[0])
- #
- #                        if isinstance(sub_sub_value, numbers.Number):
- #                            result[players_car_data[0]] = sub_sub_value
- #
- #                        # deal with embedded types usually for tyres.
- #                        # for example CarStatusData_V1_Array_22
- #
- #                        elif len(getattr(attr_to_process, players_car_data[0])) == 4:
- #                            result[players_car_data[0]] = {
- #                                'rl': getattr(attr_to_process, players_car_data[0])[0],
- #                                'rr': getattr(attr_to_process, players_car_data[0])[1],
- #                                'fl': getattr(attr_to_process, players_car_data[0])[2],
- #                                'fr': getattr(attr_to_process, players_car_data[0])[3]
- #                            }
- #                        else:
- #                            logger.info(f'Missed {players_car_data}')
- #            except Exception as exc:
- #
- #                if hasattr(type(sub_field), '_fields_'):
- #                    for key in type(sub_field)._fields_:
- #                        print(getattr(sub_field, key[0]))
- #                        # result[getattr(sub_field, key[0])]
- #                else:
- #                    # most likely suspensions or similar with an array of 4
- # #                   print(f'{top_level_field[0]} -> {sub_field[0]}, {sub_field[1]},
- #                    #                   {sub_field[2]} ,{sub_field[3]}')
- #                    result[top_level_field[0]] = {
- #                                'rl': sub_field[0],
- #                                'rr': sub_field[1],
- #                                'fl': sub_field[2],
- #                                'fr': sub_field[3]
- #                            }
     return result
 
 
@@ -227,7 +125,6 @@ def format_packet(packet):
                             data[key[0]][f'{key[0]}_rr'] = float(reading[1])
                             data[key[0]][f'{key[0]}_fl'] = float(reading[2])
                             data[key[0]][f'{key[0]}_fr'] = float(reading[3])
-                        # data[key[0]] = value
                     res[fname].append(data)
         else:
             raise RuntimeError(
