@@ -6,7 +6,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='hippocrates',
+    name='cassandra',
     version=cassandra.__version__,
     author='Chris Hannam',
     author_email='ch@chrishannam.co.uk',
