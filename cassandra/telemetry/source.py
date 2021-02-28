@@ -5,6 +5,8 @@ import socket
 from f1_2020_telemetry.packets import unpack_udp_packet, PackedLittleEndianStructure
 import logging
 
+from cassandra.telemetry.constants import PACKET_MAPPER
+
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
@@ -63,11 +65,15 @@ class Feed:
 
 def format_packet_v2(packet, players_car=True):
     packet_type = type(packet)
-
     players_car = packet.header.playerCarIndex
+
+    # usually this is data about other players cars.
+    if packet_type.__name__ not in PACKET_MAPPER.keys():
+        return
 
     result = {
         'type': packet_type.__name__,
+        'name': PACKET_MAPPER[packet_type.__name__],
         'sessionTime': packet.header.sessionTime,
         'sessionUID': float(packet.header.sessionUID)
     }
