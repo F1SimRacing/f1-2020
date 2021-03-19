@@ -1,5 +1,4 @@
 from typing import NamedTuple
-
 from f1_2020_telemetry.packets import TrackIDs
 
 from cassandra.data_storage.influx import InfluxConnector
@@ -64,15 +63,15 @@ def main():
 
                 data.append(
                     {
-                        "measurement": name,
-                        "tags": {
-                            "type": packet['name'],
-                            "track": race_details.circuit,
-                        },
-                        "fields": {
-                            "value": value,
-                            "lap": lap_number,
+                        'measurement': name,
+                        'tags': {
+                            'type': packet['name'],
+                            'track': race_details.circuit,
+                            'lap': lap_number,
                             'total_laps': race_details.total_laps
+                        },
+                        'fields': {
+                            'value': value,
                         }
                     }
                 )
