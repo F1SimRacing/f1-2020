@@ -3,5 +3,5 @@ gunicorn
 gevent
 f1_2020_telemetry
 aiohttp_sse_client
-influxdb
+influxdb-client
 kafka-python
