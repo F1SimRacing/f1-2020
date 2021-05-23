@@ -1,0 +1,27 @@
+[tool.black]
+line-length = 88
+target-version = ['py36', 'py37', 'py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # The following are specific to Black, you probably don't want those.
+  | blib2to3
+  | tests/data
+  | profiling
+)/
+'''
+
+
+# Build system information below.
+# NOTE: You don't need this in your own Black configuration.
+
+#[build-system]
+#requires = ["setuptools>=41.0", "setuptools-scm", "wheel"]
+#build-backend = "setuptools.build_meta"
+#
+#[tool.pytest.ini_options]
+## Option below requires `tests/optional.py`
+#optional-tests = [
+#  "no_python2: run when `python2` extra NOT installed",
+#  "no_blackd: run when `d` extra NOT installed",
+#]
