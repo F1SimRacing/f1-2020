@@ -6,11 +6,7 @@ from influxdb import InfluxDBClient
 class InfluxConnector:
 
     def __init__(self, database: str = 'telemetry',
-                 host: str = None, port: str = None) -> None:
-        if not port:
-            port = 8086
-        if not host:
-            host = 'localhost'
+                 host: str = 'localhost', port: int = 8086) -> None:
 
         self.connection = InfluxDBClient(host=host, port=port, database=database)
 

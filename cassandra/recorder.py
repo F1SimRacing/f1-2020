@@ -6,15 +6,13 @@ from cassandra.telemetry.constants import PACKET_MAPPER
 from cassandra.telemetry.source import Feed
 import logging
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 logger = logging.getLogger(__name__)
-
-"""
-Lap is part of a Session which is part of a Race Weekend.
-"""
 
 
 class Race(NamedTuple):
@@ -25,8 +23,8 @@ class Race(NamedTuple):
 def main():
     race_details = None
 
-    influx_conn = InfluxConnector(host='192.168.0.100')
-    logger.info('Starting server to receive telemetry data.')
+    influx_conn = InfluxConnector(host="192.168.0.100")
+    logger.info("Starting server to receive telemetry data.")
     feed = Feed()
     lap_number = 1
 
@@ -37,46 +35,42 @@ def main():
             continue
 
         data = []
-        if packet['type'] == 'PacketSessionData_V1' and not race_details:
+        if packet["type"] == "PacketSessionData_V1" and not race_details:
             race_details = Race(
-                circuit=TrackIDs[packet['trackId']],
-                total_laps=packet['totalLaps']
+                circuit=TrackIDs[packet["trackId"]], total_laps=packet["totalLaps"]
             )
 
         # we are late, so spin until we find out which race we are at
         if not race_details:
             continue
 
-        if packet['type'] == 'PacketLapData_V1':
-            lap_number = packet['currentLapNum']
+        if packet["type"] == "PacketLapData_V1":
+            lap_number = packet["currentLapNum"]
 
-        if packet['type'] in PACKET_MAPPER.keys():
+        if packet["type"] in PACKET_MAPPER.keys():
             for name, value in packet.items():
-                if name in ['type', 'mfdPanelIndex',
-                            'buttonStatus']:
+                if name in ["type", "mfdPanelIndex", "buttonStatus"]:
                     continue
 
                 # drivers name are bytes
-                if name == 'name' and packet['type'] == 'PacketParticipantsData_V1':
+                if name == "name" and packet["type"] == "PacketParticipantsData_V1":
                     if type(value) == bytes:
-                        value = value.decode('utf-8')
+                        value = value.decode("utf-8")
 
                 data.append(
                     {
-                        'measurement': name,
-                        'tags': {
-                            'type': packet['name'],
-                            'track': race_details.circuit,
-                            'lap': lap_number,
-                            'total_laps': race_details.total_laps
+                        "measurement": name,
+                        "tags": {
+                            "type": packet["name"],
+                            "track": race_details.circuit,
+                            "lap": lap_number,
+                            "total_laps": race_details.total_laps,
                         },
-                        'fields': {
-                            'value': value,
-                        }
+                        "fields": {"value": value,},
                     }
                 )
                 influx_conn.write_data(data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
