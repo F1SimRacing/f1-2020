@@ -1,10 +1,11 @@
 from typing import NamedTuple
-from f1_2020_telemetry.packets import TrackIDs
+from f1_2020_telemetry.types import TrackIDs
 
-from cassandra.data_storage.influx import InfluxConnector
+from cassandra.connectors.influxdb import InfluxDBConnector
 from cassandra.telemetry.constants import PACKET_MAPPER
 from cassandra.telemetry.source import Feed
 import logging
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,7 +24,7 @@ class Race(NamedTuple):
 def main():
     race_details = None
 
-    influx_conn = InfluxConnector(host="192.168.0.100")
+    influx_conn = InfluxDBConnector(host="192.168.0.101")
     logger.info("Starting server to receive telemetry data.")
     feed = Feed()
     lap_number = 1
@@ -66,10 +67,13 @@ def main():
                             "lap": lap_number,
                             "total_laps": race_details.total_laps,
                         },
-                        "fields": {"value": value,},
+                        "fields": {"value": value},
                     }
                 )
-                influx_conn.write_data(data)
+                sequence = ["mem,host=host1 used_percent=23.43234543",
+                            "mem,host=host1 available_percent=15.856523"]
+
+            influx_conn.write(sequence)
 
 
 if __name__ == "__main__":
