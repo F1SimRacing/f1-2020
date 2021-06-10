@@ -6,6 +6,8 @@ See - https://www.influxdata.com/
 from pathlib import Path
 from typing import List
 
+from influxdb_client.client.write_api import SYNCHRONOUS
+
 from cassandra.config import load_config
 from influxdb_client import InfluxDBClient
 import logging
@@ -33,6 +35,7 @@ class InfluxDBConnector:
         if not self._connection:
             self._connection = InfluxDBClient(url=self.config['host'],
                                               token=self.config['token'])
+        return self._connection
 
     def write(self, data: List[str]):
         """
@@ -50,6 +53,5 @@ class InfluxDBConnector:
         Example:
             "car_status,circuit=monza,lap=3,race_type=championship speed=287"
         """
-
-        self.connection.write_api.write(self.config['bucket'],
-                                        self.config['org'], data)
+        write_api = self.connection.write_api(write_options=SYNCHRONOUS)
+        write_api.write(self.config['bucket'], self.config['org'], data)
