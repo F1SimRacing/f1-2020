@@ -7,8 +7,9 @@ for display via ang graphing application.
 
 ## Data Storage
 I used [InfluxDB](https://www.influxdata.com/) which is a great time series database.
+See (Docker Hub)[https://hub.docker.com/_/influxdb].
 ```bash
-docker pull quay.io/influxdb/influxdb:v2.0.3
+docker pull quay.io/influxdb/influxdb:latest
 ```
 
 ## Graphing
