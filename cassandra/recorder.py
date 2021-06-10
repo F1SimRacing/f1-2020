@@ -24,7 +24,7 @@ class Race(NamedTuple):
 def main():
     race_details = None
 
-    influx_conn = InfluxDBConnector(host="192.168.0.101")
+    influx_conn = InfluxDBConnector('/Users/channam/.config/cassandra/config.ini')
     logger.info("Starting server to receive telemetry data.")
     feed = Feed()
     lap_number = 1
@@ -49,8 +49,13 @@ def main():
             lap_number = packet["currentLapNum"]
 
         if packet["type"] in PACKET_MAPPER.keys():
+            packet_name: str = 'unknown'
             for name, value in packet.items():
-                if name in ["type", "mfdPanelIndex", "buttonStatus"]:
+
+                if name == 'name':
+                    packet_name = value
+
+                if name in ["type", "mfdPanelIndex", "buttonStatus", 'name']:
                     continue
 
                 # drivers name are bytes
@@ -59,21 +64,25 @@ def main():
                         value = value.decode("utf-8")
 
                 data.append(
-                    {
-                        "measurement": name,
-                        "tags": {
-                            "type": packet["name"],
-                            "track": race_details.circuit,
-                            "lap": lap_number,
-                            "total_laps": race_details.total_laps,
-                        },
-                        "fields": {"value": value},
-                    }
+                    f'{packet_name},track={race_details.circuit},'
+                    f'lap={lap_number},total_laps={race_details.total_laps}'
+                    f' {name}={value}'
+                    # {
+                    #     "measurement": name,
+                    #     "tags": {
+                    #         "type": packet["name"],
+                    #         "track": race_details.circuit,
+                    #         "lap": lap_number,
+                    #         "total_laps": race_details.total_laps,
+                    #     },
+                    #     "fields": {"value": value},
+                    # }
                 )
-                sequence = ["mem,host=host1 used_percent=23.43234543",
-                            "mem,host=host1 available_percent=15.856523"]
-
-            influx_conn.write(sequence)
+                # data = ["mem,host=host1 used_percent=23.43234543",
+                #             "mem,host=host1 available_percent=15.856523"]
+            a = 1
+            influx_conn.write(data)
+            #influx_conn.write(data)
 
 
 if __name__ == "__main__":
