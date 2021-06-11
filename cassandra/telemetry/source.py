@@ -35,31 +35,32 @@ def format_packet_v2(packet, players_car=True):
     packet_type = type(packet)
     players_car = packet.header.playerCarIndex
 
-    team_id = packet.participants[19].teamId
-    team_name = TeamIDs[packet.participants[19].teamId]
-    teammate_car = 0
-
-    player_id = packet.participants[19].driverId
-
-    for i, racer in enumerate(packet.participants):
-        if racer.teamId == team_id and racer.driverId != player_id:
-            teammate_car = i
 
     # usually this is data about other players cars.
     if packet_type.__name__ not in PACKET_MAPPER.keys():
         return
 
-    if packet_type.__name__ == 'PacketParticipantsData_V1':
-        a =1
-
     result = {
         'type': packet_type.__name__,
         'name': PACKET_MAPPER[packet_type.__name__],
         'sessionTime': packet.header.sessionTime,
-        'sessionUID': int(packet.header.sessionUID),
-        'teammate': teammate_car,
-        'team_name': team_name,
+        'sessionUID': int(packet.header.sessionUID)
     }
+
+    if hasattr(packet, 'participants'):
+        team_id = packet.participants[19].teamId
+        team_name = TeamIDs[packet.participants[19].teamId]
+        teammate_car = 0
+
+        player_id = packet.participants[19].driverId
+
+        for i, racer in enumerate(packet.participants):
+            if racer.teamId == team_id and racer.driverId != player_id:
+                teammate_car = i
+        result['teammate'] = teammate_car
+        result['team_name'] = team_name
+
+    teammate_results = None
 
     for field in packet_type._fields_:
         field_name = field[0]
@@ -79,7 +80,8 @@ def format_packet_v2(packet, players_car=True):
             # on entry per car on the track.
             elif len(value) == 22:
                 result = extract_all_car_array(value, players_car, result)
-                teammate_results = extract_all_car_array(value, teammate_car, result)
+                if hasattr(packet, 'participants'):
+                    teammate_results = extract_all_car_array(value, teammate_car, result)
         except:
             pass
     return result, teammate_results

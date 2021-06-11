@@ -69,27 +69,16 @@ def main():
                     if type(value) == bytes:
                         value = value.decode("utf-8")
 
-                data.append(
-                    f'{packet_name},track={race_details.circuit},'
-                    f'lap={lap_number},session_uid={race_details.session_uid},'
-                    f'session_type={race_details.session_type}'
-                    f' {name}={value}'
-                    # {
-                    #     "measurement": name,
-                    #     "tags": {
-                    #         "type": packet["name"],
-                    #         "track": race_details.circuit,
-                    #         "lap": lap_number,
-                    #         "total_laps": race_details.total_laps,
-                    #     },
-                    #     "fields": {"value": value},
-                    # }
-                )
-                # data = ["mem,host=host1 used_percent=23.43234543",
-                #             "mem,host=host1 available_percent=15.856523"]
-            a = 1
-            # influx_conn.write(data)
-            #influx_conn.write(data)
+                # FIXME
+                if name not in ['sessionUID', 'team_name']:
+                    data.append(
+                        f'{packet_name},track={race_details.circuit},'
+                        f'lap={lap_number},session_uid={race_details.session_uid},'
+                        f'session_type={race_details.session_type}'
+                        f' {name}={value}'
+                    )
+
+            influx_conn.write(data)
 
 
 if __name__ == "__main__":

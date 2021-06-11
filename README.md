@@ -4,23 +4,26 @@ for display via ang graphing application.
 
 (UDP Specification)[https://forums.codemasters.com/topic/54423-f1%C2%AE-2020-udp-specification/]
 
-
-# Server Images
-
-## Data Storage
+# Data Storage
 I used [InfluxDB](https://www.influxdata.com/) which is a great time series database.
 See (Docker Hub)[https://hub.docker.com/_/influxdb].
 ```bash
 docker pull quay.io/influxdb/influxdb:latest
 ```
 
-## Graphing
+# Graphing Using Grafana
 I used Grafana to connect to InfluxDB. See - https://grafana.com/docs/grafana/latest/installation/docker/
 ```bash
 docker run -d -p 3000:3000 grafana/grafana
 ```
 
-### Config
+## Connection to InfluxDB
+Connecting to InfluxDB 2 requires 7.1 and above.
+
+![alt text](images/influxdb_grafana_config_1.png "Top half of config of datasource")
+![alt text](images/influxdb_grafana_config_2.png "Bottom half of config of datasource")
+
+## Refresh Rate
 To enable sub second updates, alter the following in `/etc/grafana/grafana.ini`
 
 ```ini
@@ -31,10 +34,10 @@ To enable sub second updates, alter the following in `/etc/grafana/grafana.ini`
 min_refresh_interval = 100ms
 ```
 
-Connecting to InfluxDB 2 requires 7.1 and above.
+Next add the refresh rate as an option in the dashboard setting, otherwise you won't be able
+to select it.
 
-![alt text](images/influxdb_grafana_config_1.png "Top half of config of datasource")
-![alt text](images/influxdb_grafana_config_2.png "Bottom half of config of datasource")
+![alt text](images/grafana_refresh_rate.png "Set refresh rate")
 
 
 # Links
