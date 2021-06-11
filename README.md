@@ -20,6 +20,23 @@ I used Grafana to connect to InfluxDB. See - https://grafana.com/docs/grafana/la
 docker run -d -p 3000:3000 grafana/grafana
 ```
 
+### Config
+To enable sub second updates, alter the following in `/etc/grafana/grafana.ini`
+
+```ini
+#################################### Dashboards History ##################
+[dashboards]
+# Number dashboard versions to keep (per dashboard). Default: 20, Minimum: 1
+;versions_to_keep = 20
+min_refresh_interval = 100ms
+```
+
+Connecting to InfluxDB 2 requires 7.1 and above.
+
+![alt text](images/influxdb_grafana_config_1.png "Top half of config of datasource")
+![alt text](images/influxdb_grafana_config_2.png "Bottom half of config of datasource")
+
+
 # Links
 * Excellent Telemetry tool [PXG F1](https://bitbucket.org/Fiingon/pxg-f1-telemetry/src)
 * Library for reading packets [Python](https://pypi.org/project/f1-2020-telemetry/)
