@@ -2,7 +2,7 @@ from typing import NamedTuple
 from f1_2020_telemetry.types import TrackIDs
 
 from cassandra.connectors.influxdb import InfluxDBConnector
-from cassandra.telemetry.constants import PACKET_MAPPER
+from cassandra.telemetry.constants import PACKET_MAPPER, SESSION_TYPE, TYRE_COMPOUND
 from cassandra.telemetry.source import Feed
 import logging
 
@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 class Race(NamedTuple):
     circuit: str
-    total_laps: int
+    session_type: str
+    session_uid: str
 
 
 def main():
@@ -37,8 +38,13 @@ def main():
 
         data = []
         if packet["type"] == "PacketSessionData_V1" and not race_details:
+            # 0 = unknown, 1 = P1, 2 = P2, 3 = P3, 4 = Short P
+            # 5 = Q1, 6 = Q2, 7 = Q3, 8 = Short Q, 9 = OSQ
+            # 10 = R, 11 = R2, 12 = Time Trial
             race_details = Race(
-                circuit=TrackIDs[packet["trackId"]], total_laps=packet["totalLaps"]
+                circuit=TrackIDs[packet["trackId"]],
+                session_type=SESSION_TYPE[packet["sessionType"]],
+                session_uid=packet["sessionUID"]
             )
 
         # we are late, so spin until we find out which race we are at
@@ -65,7 +71,8 @@ def main():
 
                 data.append(
                     f'{packet_name},track={race_details.circuit},'
-                    f'lap={lap_number},total_laps={race_details.total_laps}'
+                    f'lap={lap_number},session_uid={race_details.session_uid},'
+                    f'session_type={race_details.session_type}'
                     f' {name}={value}'
                     # {
                     #     "measurement": name,
@@ -81,7 +88,7 @@ def main():
                 # data = ["mem,host=host1 used_percent=23.43234543",
                 #             "mem,host=host1 available_percent=15.856523"]
             a = 1
-            influx_conn.write(data)
+            # influx_conn.write(data)
             #influx_conn.write(data)
 
 

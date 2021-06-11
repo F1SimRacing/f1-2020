@@ -5,6 +5,8 @@ import socket
 from f1_2020_telemetry.packets import unpack_udp_packet, PackedLittleEndianStructure
 import logging
 
+from f1_2020_telemetry.types import TeamIDs
+
 from cassandra.telemetry.constants import PACKET_MAPPER
 
 logging.basicConfig(level=logging.INFO,
@@ -33,15 +35,30 @@ def format_packet_v2(packet, players_car=True):
     packet_type = type(packet)
     players_car = packet.header.playerCarIndex
 
+    team_id = packet.participants[19].teamId
+    team_name = TeamIDs[packet.participants[19].teamId]
+    teammate_car = 0
+
+    player_id = packet.participants[19].driverId
+
+    for i, racer in enumerate(packet.participants):
+        if racer.teamId == team_id and racer.driverId != player_id:
+            teammate_car = i
+
     # usually this is data about other players cars.
     if packet_type.__name__ not in PACKET_MAPPER.keys():
         return
+
+    if packet_type.__name__ == 'PacketParticipantsData_V1':
+        a =1
 
     result = {
         'type': packet_type.__name__,
         'name': PACKET_MAPPER[packet_type.__name__],
         'sessionTime': packet.header.sessionTime,
-        'sessionUID': float(packet.header.sessionUID)
+        'sessionUID': int(packet.header.sessionUID),
+        'teammate': teammate_car,
+        'team_name': team_name,
     }
 
     for field in packet_type._fields_:
@@ -62,9 +79,10 @@ def format_packet_v2(packet, players_car=True):
             # on entry per car on the track.
             elif len(value) == 22:
                 result = extract_all_car_array(value, players_car, result)
+                teammate_results = extract_all_car_array(value, teammate_car, result)
         except:
             pass
-    return result
+    return result, teammate_results
 
 
 def extract_all_car_array(packet, players_car, result):

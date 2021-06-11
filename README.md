@@ -2,6 +2,8 @@
 A tool for forwarding the UDP telemetry data from the simulator game F1 2020 to InfluxDB
 for display via ang graphing application.
 
+(UDP Specification)[https://forums.codemasters.com/topic/54423-f1%C2%AE-2020-udp-specification/]
+
 
 # Server Images
 

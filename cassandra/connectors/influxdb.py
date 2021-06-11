@@ -28,6 +28,7 @@ class InfluxDBConnector:
 
         self.config_file_name: str = config_filename
         self._connection = None
+        self._write_api = None
         self.config = load_config()['influxdb']
 
     @property
@@ -36,6 +37,12 @@ class InfluxDBConnector:
             self._connection = InfluxDBClient(url=self.config['host'],
                                               token=self.config['token'])
         return self._connection
+
+    @property
+    def write_api(self):
+        if not self._write_api:
+            self._write_api = self.connection.write_api(write_options=SYNCHRONOUS)
+        return self._write_api
 
     def write(self, data: List[str]):
         """
@@ -53,5 +60,31 @@ class InfluxDBConnector:
         Example:
             "car_status,circuit=monza,lap=3,race_type=championship speed=287"
         """
-        write_api = self.connection.write_api(write_options=SYNCHRONOUS)
-        write_api.write(self.config['bucket'], self.config['org'], data)
+
+        # explore:
+        # write_api = client.write_api(write_options=ASYNCHRONOUS)
+        #
+        # _point1 = Point("my_measurement").tag("location", "Prague").field("temperature",
+        #                                                                   25.3)
+        # _point2 = Point("my_measurement").tag("location", "New York").field(
+        #     "temperature", 24.3)
+        #
+        # async_result = write_api.write(bucket="my-bucket", record=[_point1, _point2])
+        # async_result.get()
+        #
+        # client.close()
+        # or
+        # with _client.write_api(write_options=WriteOptions(batch_size=500,
+        #                                                       flush_interval=10_000,
+        #                                                       jitter_interval=2_000,
+        #                                                       retry_interval=5_000,
+        #                                                       max_retries=5,
+        #                                                       max_retry_delay=30_000,
+        #                                                       exponential_base=2))
+        #                                                       as _write_client:
+        # see https://github.com/influxdata/influxdb-client-python
+
+        # write_api = self.connection.write_api(write_options=SYNCHRONOUS)
+        self.write_api.write(self.config['bucket'], self.config['org'],
+                                            data)
+        # async_result.get()
