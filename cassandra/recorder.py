@@ -31,7 +31,7 @@ def main():
     lap_number = 1
 
     while True:
-        packet = feed.get_latest()
+        packet, teammate = feed.get_latest()
 
         if not packet:
             continue

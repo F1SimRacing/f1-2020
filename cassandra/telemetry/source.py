@@ -27,8 +27,8 @@ class Feed:
 
     def get_latest(self):
         packet = unpack_udp_packet(self.socket.recv(2048))
-        p = format_packet_v2(packet)
-        return p
+        user, teammate = format_packet_v2(packet)
+        return user, teammate
 
 
 def format_packet_v2(packet, players_car=True):
