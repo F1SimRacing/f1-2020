@@ -18,6 +18,8 @@ import os.path
 import time
 
 # usual linux ports
+from cassandra.connectors.influxdb import InfluxDBConnector
+
 PORTS = ['ttyUSB0', 'ttyUSB1', 'ttyAMA0', 'ttyACM0']
 SERIAL_PORT_PATH_ROOT = '/dev/'
 
@@ -87,9 +89,14 @@ def _detect_port():
 
 if __name__ == '__main__':
     print('starting!')
+    influx_conn = InfluxDBConnector('/Users/channam/.config/cassandra/config.ini')
     while True:
         sensor_reader = SerialSensor(port=_detect_port())
         reading = sensor_reader.read()
 
         if reading:
             print(f'{reading}')
+            data = [f"health,tag=pulse pulse={reading['bpm']}"]
+            influx_conn.write(data)
+
+
