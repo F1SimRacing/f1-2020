@@ -5,3 +5,4 @@ f1_2020_telemetry
 aiohttp_sse_client
 influxdb-client
 kafka-python
+pyserial

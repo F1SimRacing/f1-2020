@@ -2,7 +2,7 @@ from typing import NamedTuple
 from f1_2020_telemetry.types import TrackIDs
 
 from cassandra.connectors.influxdb import InfluxDBConnector
-from cassandra.telemetry.constants import PACKET_MAPPER, SESSION_TYPE, TYRE_COMPOUND
+from cassandra.telemetry.constants import PACKET_MAPPER, SESSION_TYPE
 from cassandra.telemetry.source import Feed
 import logging
 
@@ -38,9 +38,6 @@ def main():
 
         data = []
         if packet["type"] == "PacketSessionData_V1" and not race_details:
-            # 0 = unknown, 1 = P1, 2 = P2, 3 = P3, 4 = Short P
-            # 5 = Q1, 6 = Q2, 7 = Q3, 8 = Short Q, 9 = OSQ
-            # 10 = R, 11 = R2, 12 = Time Trial
             race_details = Race(
                 circuit=TrackIDs[packet["trackId"]],
                 session_type=SESSION_TYPE[packet["sessionType"]],
@@ -52,10 +49,11 @@ def main():
             continue
 
         if packet["type"] == "PacketLapData_V1":
-            lap_number = packet["currentLapNum"]
+            lap_number = int(packet["currentLapNum"])
 
         if packet["type"] in PACKET_MAPPER.keys():
             packet_name: str = 'unknown'
+
             for name, value in packet.items():
 
                 if name == 'name':

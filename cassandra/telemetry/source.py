@@ -20,21 +20,26 @@ class Feed:
 
     def __init__(self, port: int = None):
         if not port:
-            port = 20777
+            port = 20778
 
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.socket.bind(('', port))
 
     def get_latest(self):
         packet = unpack_udp_packet(self.socket.recv(2048))
-        user, teammate = format_packet_v2(packet)
+        if not packet:
+            return  None, None
+
+        try:
+            user, teammate = format_packet_v2(packet)
+        except:
+            return None, None
         return user, teammate
 
 
-def format_packet_v2(packet, players_car=True):
+def format_packet_v2(packet):
     packet_type = type(packet)
     players_car = packet.header.playerCarIndex
-
 
     # usually this is data about other players cars.
     if packet_type.__name__ not in PACKET_MAPPER.keys():
