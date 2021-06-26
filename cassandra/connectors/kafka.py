@@ -9,8 +9,8 @@ class KafkaConnector:
     def __init__(self, host: str = None):
 
         if not host:
-            host = 'localhost'
-        self.producer = KafkaProducer(bootstrap_servers=f'{host}:9092')
+            host = 'localhost:9092'
+        self.producer = KafkaProducer(bootstrap_servers=host)
 
     def send(self, topic, message):
         self.producer.send(topic, message)
