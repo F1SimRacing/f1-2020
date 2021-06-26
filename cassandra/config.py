@@ -1,7 +1,9 @@
 import configparser
 
 from pathlib import Path
+from dataclasses import dataclass
 import logging
+from typing import Union
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
@@ -19,6 +21,42 @@ def load_config(filename: str = HOME / '.config' / 'cassandra' / CONFIG_FILE_NAM
 
     if config_file.is_file():
         config.read(filename)
-        return config
     else:
         logger.error('Unable to fine config file.')
+        return False
+
+    recorder_config = RecorderConfiguration()
+
+    for section in config.keys():
+        if section == 'kafka':
+            recorder_config.kafka = KafkaConfiguration(
+                config[section]['bootstrap_servers'])
+
+        if section == 'influxdb':
+            recorder_config.influxdb = InfluxDBConfiguration(
+                config[section]['host'],
+                config[section]['token'],
+                config[section]['org'],
+                config[section]['bucket']
+            )
+
+    return recorder_config
+
+
+@dataclass
+class KafkaConfiguration:
+    bootstrap_servers: str
+
+
+@dataclass
+class InfluxDBConfiguration:
+    host: str
+    token: str
+    org: str
+    bucket: str
+
+
+@dataclass
+class RecorderConfiguration:
+    kafka: Union[KafkaConfiguration, None] = None
+    influxdb: Union[InfluxDBConfiguration, None] = None
