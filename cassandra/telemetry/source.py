@@ -20,7 +20,7 @@ class Feed:
 
     def __init__(self, port: int = None):
         if not port:
-            port = 20778
+            port = 20777
 
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.socket.bind(('', port))
