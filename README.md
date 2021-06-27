@@ -2,11 +2,11 @@
 A tool for forwarding the UDP telemetry data from the simulator game F1 2020 to InfluxDB
 for display via ang graphing application.
 
-(UDP Specification)[https://forums.codemasters.com/topic/54423-f1%C2%AE-2020-udp-specification/]
+[UDP Specification](https://forums.codemasters.com/topic/54423-f1%C2%AE-2020-udp-specification/)
 
 # Data Storage
 I used [InfluxDB](https://www.influxdata.com/) which is a great time series database.
-See (Docker Hub)[https://hub.docker.com/_/influxdb].
+See [Docker Hub](https://hub.docker.com/_/influxdb).
 ```bash
 docker pull quay.io/influxdb/influxdb:latest
 ```
