@@ -1,6 +1,4 @@
-
 class Packet:
-
     def __init__(self, packet):
         for i in packet.header._fields_:
             setattr(self, i[0], getattr(packet.header, i[0]))
@@ -23,4 +21,4 @@ class CarTelemetryData(Packet):
             setattr(self, i[0], getattr(packet, i[0]))
 
     def __repr__(self):
-        return 'car_telemetry_data'
+        return "car_telemetry_data"

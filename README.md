@@ -43,10 +43,9 @@ to select it.
 # Links
 * Excellent Telemetry tool [PXG F1](https://bitbucket.org/Fiingon/pxg-f1-telemetry/src)
 * Library for reading packets [Python](https://pypi.org/project/f1-2020-telemetry/)
-* Similar project using [Kafka](https://www.youtube.com/watch?v=Re9LOAYZi2A) and 
+* Similar project using [Kafka](https://www.youtube.com/watch?v=Re9LOAYZi2A) and
   with [Camel](https://www.youtube.com/watch?v=2efOtyFAZ4s)
-  
+
 # Demo
 Youtube:
 * [Grafana Demo](https://youtu.be/zWDqIcY03e0)
-

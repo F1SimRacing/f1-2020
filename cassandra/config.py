@@ -5,14 +5,16 @@ from dataclasses import dataclass
 import logging
 from typing import Union
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 logger = logging.getLogger(__name__)
 
-HOME: str = Path.home()
-CONFIG_FILE_NAME: str = 'config.ini'
+HOME: Path = Path.home()
+CONFIG_FILE_NAME: str = "config.ini"
 
 
 @dataclass
@@ -34,8 +36,9 @@ class RecorderConfiguration:
     influxdb: Union[InfluxDBConfiguration, None] = None
 
 
-def load_config(filename: str = HOME / '.config' / 'cassandra' / CONFIG_FILE_NAME) \
-        -> RecorderConfiguration:
+def load_config(
+    filename: Path = HOME / ".config" / "cassandra" / CONFIG_FILE_NAME,
+) -> RecorderConfiguration:
     config = configparser.ConfigParser()
     config_file = Path(filename)
     recorder_config = RecorderConfiguration()
@@ -43,20 +46,21 @@ def load_config(filename: str = HOME / '.config' / 'cassandra' / CONFIG_FILE_NAM
     if config_file.is_file():
         config.read(filename)
     else:
-        logger.error('Unable to fine config file.')
+        logger.error("Unable to fine config file.")
         return recorder_config
 
     for section in config.keys():
-        if section == 'kafka':
+        if section == "kafka":
             recorder_config.kafka = KafkaConfiguration(
-                config[section]['bootstrap_servers'])
+                config[section]["bootstrap_servers"]
+            )
 
-        if section == 'influxdb':
+        if section == "influxdb":
             recorder_config.influxdb = InfluxDBConfiguration(
-                config[section]['host'],
-                config[section]['token'],
-                config[section]['org'],
-                config[section]['bucket']
+                config[section]["host"],
+                config[section]["token"],
+                config[section]["org"],
+                config[section]["bucket"],
             )
 
     return recorder_config

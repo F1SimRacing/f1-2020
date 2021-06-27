@@ -8,22 +8,20 @@ from typing import List, Dict
 
 from influxdb_client.client.write_api import SYNCHRONOUS
 
-from cassandra.config import load_config, InfluxDBConfiguration
+from cassandra.config import InfluxDBConfiguration
 from influxdb_client import InfluxDBClient
 import logging
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 logger = logging.getLogger(__name__)
 
-HOME: str = Path.home()
-CONFIG_FILE_NAME: str = 'config.ini'
-
 
 class InfluxDBConnector:
-
     def __init__(self, config: InfluxDBConfiguration) -> None:
 
         self.config = config
@@ -33,8 +31,9 @@ class InfluxDBConnector:
     @property
     def connection(self) -> InfluxDBClient:
         if not self._connection:
-            self._connection = InfluxDBClient(url=self.config.host,
-                                              token=self.config.token)
+            self._connection = InfluxDBClient(
+                url=self.config.host, token=self.config.token
+            )
         return self._connection
 
     @property

@@ -20,14 +20,14 @@ import time
 # usual linux ports
 from cassandra.connectors.influxdb import InfluxDBConnector
 
-PORTS = ['ttyUSB0', 'ttyUSB1', 'ttyAMA0', 'ttyACM0']
-SERIAL_PORT_PATH_ROOT = '/dev/'
+PORTS = ["ttyUSB0", "ttyUSB1", "ttyAMA0", "ttyACM0"]
+SERIAL_PORT_PATH_ROOT = "/dev/"
 
 
 logging.basicConfig(
     level=logging.ERROR,
-    format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
+    format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 
 logger = logging.getLogger(__name__)
@@ -38,19 +38,19 @@ class SerialSensor:
         if port:
             self.serial_port = port
         else:
-            logger.info('Finding port.')
+            logger.info("Finding port.")
             self.serial_port = _detect_port()
         self.ser = serial.Serial(self.serial_port, 9600, timeout=1)
 
         self.debug = debug
         self.json_data = json_data
 
-        logger.debug(f'Using {self.serial_port} as serial port')
+        logger.debug(f"Using {self.serial_port} as serial port")
 
     def read(self, timeout=1):
 
         if not self.serial_port:
-            logger.error('Unable to find anything on the serial port to read from.')
+            logger.error("Unable to find anything on the serial port to read from.")
             return
 
         stop = time.time() + timeout
@@ -60,15 +60,15 @@ class SerialSensor:
             i = i + 1
             raw_serial = self.ser.readline()
 
-            logger.debug(f'Attempt {i}: Received: {raw_serial}')
+            logger.debug(f"Attempt {i}: Received: {raw_serial}")
 
             if self.json_data and raw_serial:
                 try:
                     return json.loads(raw_serial)
                 except JSONDecodeError:
-                    logger.debug(f'Failed to decode to JSON: {raw_serial}')
+                    logger.debug(f"Failed to decode to JSON: {raw_serial}")
             else:
-                logger.debug('Failed to decode anything')
+                logger.debug("Failed to decode anything")
 
 
 def _detect_port():
@@ -82,21 +82,19 @@ def _detect_port():
 
     if not device_path:
         # lets try osx stuff
-        for file_name in glob.glob1('/dev', 'tty.usbserial-*'):
+        for file_name in glob.glob1("/dev", "tty.usbserial-*"):
             device_path = SERIAL_PORT_PATH_ROOT + file_name
     return device_path
 
 
-if __name__ == '__main__':
-    print('starting!')
-    influx_conn = InfluxDBConnector('/Users/channam/.config/cassandra/config.ini')
+if __name__ == "__main__":
+    print("starting!")
+    # influx_conn = InfluxDBConnector('/Users/channam/.config/cassandra/config.ini')
     while True:
         sensor_reader = SerialSensor(port=_detect_port())
         reading = sensor_reader.read()
 
         if reading:
-            print(f'{reading}')
+            print(f"{reading}")
             data = [f"health,tag=pulse pulse={reading['bpm']}"]
-            influx_conn.write(data)
-
-
+            # influx_conn.write(data)

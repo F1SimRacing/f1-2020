@@ -9,26 +9,27 @@ from f1_2020_telemetry.types import TeamIDs
 
 from cassandra.telemetry.constants import PACKET_MAPPER
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 logger = logging.getLogger(__name__)
 
 
 class Feed:
-
     def __init__(self, port: int = None):
         if not port:
             port = 20777
 
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        self.socket.bind(('', port))
+        self.socket.bind(("", port))
 
     def get_latest(self):
         packet = unpack_udp_packet(self.socket.recv(2048))
         if not packet:
-            return  None, None
+            return None, None
 
         try:
             user, teammate = format_packet_v2(packet)
@@ -46,13 +47,13 @@ def format_packet_v2(packet):
         return
 
     result = {
-        'type': packet_type.__name__,
-        'name': PACKET_MAPPER[packet_type.__name__],
-        'sessionTime': packet.header.sessionTime,
-        'sessionUID': int(packet.header.sessionUID)
+        "type": packet_type.__name__,
+        "name": PACKET_MAPPER[packet_type.__name__],
+        "sessionTime": packet.header.sessionTime,
+        "sessionUID": int(packet.header.sessionUID),
     }
 
-    if hasattr(packet, 'participants'):
+    if hasattr(packet, "participants"):
         team_id = packet.participants[19].teamId
         team_name = TeamIDs[packet.participants[19].teamId]
         teammate_car = 0
@@ -62,8 +63,8 @@ def format_packet_v2(packet):
         for i, racer in enumerate(packet.participants):
             if racer.teamId == team_id and racer.driverId != player_id:
                 teammate_car = i
-        result['teammate'] = teammate_car
-        result['team_name'] = team_name
+        result["teammate"] = teammate_car
+        result["team_name"] = team_name
 
     teammate_results = None
 
@@ -73,7 +74,7 @@ def format_packet_v2(packet):
         # maybe use this later to separate types?
         # field_type = field[1]
 
-        if field_name == 'header':
+        if field_name == "header":
             continue
 
         value = getattr(packet, field_name)
@@ -85,8 +86,10 @@ def format_packet_v2(packet):
             # on entry per car on the track.
             elif len(value) == 22:
                 result = extract_all_car_array(value, players_car, result)
-                if hasattr(packet, 'participants'):
-                    teammate_results = extract_all_car_array(value, teammate_car, result)
+                if hasattr(packet, "participants"):
+                    teammate_results = extract_all_car_array(
+                        value, teammate_car, result
+                    )
         except:
             pass
     return result, teammate_results
@@ -103,10 +106,10 @@ def extract_all_car_array(packet, players_car, result):
         if isinstance(value, numbers.Number):
             result[name] = value
         elif isinstance(value, ctypes.Array) and len(value) == 4:
-            result[f'{name}_rl'] = value[0]
-            result[f'{name}_rr'] = value[1]
-            result[f'{name}_fl'] = value[2]
-            result[f'{name}_fr'] = value[3]
+            result[f"{name}_rl"] = value[0]
+            result[f"{name}_rr"] = value[1]
+            result[f"{name}_fl"] = value[2]
+            result[f"{name}_fr"] = value[3]
 
     return result
 
@@ -146,12 +149,11 @@ def format_packet(packet):
                                 data[key[0]] = reading
                         else:
                             data[key[0]] = {}
-                            data[key[0]][f'{key[0]}_rl'] = float(reading[0])
-                            data[key[0]][f'{key[0]}_rr'] = float(reading[1])
-                            data[key[0]][f'{key[0]}_fl'] = float(reading[2])
-                            data[key[0]][f'{key[0]}_fr'] = float(reading[3])
+                            data[key[0]][f"{key[0]}_rl"] = float(reading[0])
+                            data[key[0]][f"{key[0]}_rr"] = float(reading[1])
+                            data[key[0]][f"{key[0]}_fl"] = float(reading[2])
+                            data[key[0]][f"{key[0]}_fr"] = float(reading[3])
                     res[fname].append(data)
         else:
-            raise RuntimeError(
-                "Bad value {!r} of type {!r}".format(value, type(value)))
+            raise RuntimeError("Bad value {!r} of type {!r}".format(value, type(value)))
     return res
