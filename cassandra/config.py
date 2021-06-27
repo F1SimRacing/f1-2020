@@ -15,34 +15,6 @@ HOME: str = Path.home()
 CONFIG_FILE_NAME: str = 'config.ini'
 
 
-def load_config(filename: str = HOME / '.config' / 'cassandra' / CONFIG_FILE_NAME):
-    config = configparser.ConfigParser()
-    config_file = Path(filename)
-
-    if config_file.is_file():
-        config.read(filename)
-    else:
-        logger.error('Unable to fine config file.')
-        return False
-
-    recorder_config = RecorderConfiguration()
-
-    for section in config.keys():
-        if section == 'kafka':
-            recorder_config.kafka = KafkaConfiguration(
-                config[section]['bootstrap_servers'])
-
-        if section == 'influxdb':
-            recorder_config.influxdb = InfluxDBConfiguration(
-                config[section]['host'],
-                config[section]['token'],
-                config[section]['org'],
-                config[section]['bucket']
-            )
-
-    return recorder_config
-
-
 @dataclass
 class KafkaConfiguration:
     bootstrap_servers: str
@@ -60,3 +32,32 @@ class InfluxDBConfiguration:
 class RecorderConfiguration:
     kafka: Union[KafkaConfiguration, None] = None
     influxdb: Union[InfluxDBConfiguration, None] = None
+
+
+def load_config(filename: str = HOME / '.config' / 'cassandra' / CONFIG_FILE_NAME) \
+        -> RecorderConfiguration:
+    config = configparser.ConfigParser()
+    config_file = Path(filename)
+
+    if config_file.is_file():
+        config.read(filename)
+    else:
+        logger.error('Unable to fine config file.')
+        return RecorderConfiguration()
+
+    recorder_config = RecorderConfiguration()
+
+    for section in config.keys():
+        if section == 'kafka':
+            recorder_config.kafka = KafkaConfiguration(
+                config[section]['bootstrap_servers'])
+
+        if section == 'influxdb':
+            recorder_config.influxdb = InfluxDBConfiguration(
+                config[section]['host'],
+                config[section]['token'],
+                config[section]['org'],
+                config[section]['bucket']
+            )
+
+    return recorder_config
