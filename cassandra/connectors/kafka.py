@@ -1,3 +1,5 @@
+from typing import Dict
+
 from kafka import KafkaProducer
 
 
@@ -14,3 +16,8 @@ class KafkaConnector:
 
     def send(self, topic, message):
         self.producer.send(topic, message)
+
+    def build_data(self, name: str, value, data: Dict) -> Dict:
+        data[name] = value
+        return data
+

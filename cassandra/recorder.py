@@ -1,7 +1,8 @@
 import json
-from typing import NamedTuple
+from typing import NamedTuple, List
 from f1_2020_telemetry.types import TrackIDs
 
+from cassandra.config import RecorderConfiguration, load_config
 from cassandra.connectors.influxdb import InfluxDBConnector
 from cassandra.telemetry.constants import PACKET_MAPPER, SESSION_TYPE
 from cassandra.telemetry.heart_beat_monitor import SerialSensor, _detect_port
@@ -28,91 +29,113 @@ class Race(NamedTuple):
     session_uid: str
 
 
-def main():
-    race_details = None
+class DataRecorder:
 
-    if SEND_TO_INFLUXDB:
-        influx_conn = InfluxDBConnector('/Users/channam/.config/cassandra/config.ini')
+    def __init__(self, config: RecorderConfiguration, port: int = 20777) -> None:
+        self.configuration: RecorderConfiguration = config
+        self.feed = Feed(port=port)
 
-    if SEND_TO_KAFKA:
-        kafka_conn = KafkaConnector('ultron:9092')
-    logger.info("Starting server to receive telemetry data.")
-    feed = Feed(port=20788)
-    lap_number = 1
+        if self.configuration.kafka:
+            self.kafka: KafkaConnector = KafkaConnector('ultron:9092')
+        else:
+            self.kafka = None
 
-    while True:
-        packet, teammate = feed.get_latest()
+        if self.configuration.influxdb:
+            self.influxdb: InfluxDBConnector = InfluxDBConnector(
+                self.configuration.influxdb)
+        else:
+            self.influxdb = None
 
-        # sensor_reader = SerialSensor(port=_detect_port())
-        # reading = sensor_reader.read()
+    def write_to_influxdb(self, data: List) -> bool:
+        if not self.influxdb:
+            return False
+        self.influxdb.write(data)
 
-        if not packet:
-            continue
+    def get_heart_rate(self):
+        sensor_reader = SerialSensor(port=_detect_port())
+        reading = sensor_reader.read()
 
-        data = []
-        if packet["type"] == "PacketSessionData_V1" and not race_details:
-            race_details = Race(
-                circuit=TrackIDs[packet["trackId"]],
-                session_type=SESSION_TYPE[packet["sessionType"]],
-                session_uid=packet["sessionUID"]
-            )
+    def listen(self):
+        race_details = None
+        logger.info("Starting server to receive telemetry data.")
 
-        # we are late, so spin until we find out which race we are at
-        if not race_details:
-            continue
+        lap_number = 1
 
-        if packet["type"] == "PacketLapData_V1":
-            lap_number = int(packet["currentLapNum"])
+        while True:
+            packet, teammate = self.feed.get_latest()
 
-        if packet["type"] in PACKET_MAPPER.keys():
-            packet_name: str = 'unknown'
+            if not packet:
+                continue
 
-            for name, value in packet.items():
+            influxdb_data = []
+            kafka_data = {}
 
-                if name == 'name':
-                    packet_name = value
+            if packet["type"] == "PacketSessionData_V1" and not race_details:
+                race_details = Race(
+                    circuit=TrackIDs[packet["trackId"]],
+                    session_type=SESSION_TYPE[packet["sessionType"]],
+                    session_uid=packet["sessionUID"]
+                )
 
-                if name in ["type", "mfdPanelIndex", "buttonStatus", 'name']:
-                    continue
+            # we are late, so spin until we find out which race we are at
+            if not race_details:
+                continue
 
-                # drivers name are bytes
-                if name == "name" and packet["type"] == "PacketParticipantsData_V1":
-                    if type(value) == bytes:
-                        value = value.decode("utf-8")
+            if packet["type"] == "PacketLapData_V1":
+                lap_number = int(packet["currentLapNum"])
 
-                # FIXME
-                if name not in ['sessionUID', 'team_name']:
-                    data.append(
-                        f'{packet_name},track={race_details.circuit},'
-                        f'lap={lap_number},session_uid={race_details.session_uid},'
-                        f'session_type={race_details.session_type}'
-                        f' {name}={value}'
-                    )
+            if packet["type"] in PACKET_MAPPER.keys():
+                packet_name: str = 'unknown'
 
-                    if SEND_TO_KAFKA:
-                        msg = {
-                            'lap_number': lap_number,
-                            'circuit': race_details.circuit,
-                            'session_uid': race_details.session_uid,
-                            'session_type': race_details.session_type,
-                            name: value
+                for name, value in packet.items():
 
-                        }
-                        kafka_conn.send(packet_name, json.dumps(msg).encode('utf-8'))
+                    if name == 'name':
+                        packet_name = value
 
-                    # if reading:
-                    #     print(f'{reading}')
-                    #     data.append(
-                    #         # f"health,tag=pulse pulse={reading['bpm']}"
-                    #         f'health,track={race_details.circuit},'
-                    #         f'lap={lap_number},session_uid={race_details.session_uid},'
-                    #         f'session_type={race_details.session_type},'
-                    #         f"stat=pulse pulse={reading['bpm']}"
-                    #     )
-                    # influx_conn.write(data)
+                    if name in ["type", "mfdPanelIndex", "buttonStatus", 'name']:
+                        continue
 
-            influx_conn.write(data)
+                    # drivers name are bytes
+                    if name == "name" and packet["type"] == "PacketParticipantsData_V1":
+                        if type(value) == bytes:
+                            value = value.decode("utf-8")
+
+                    # FIXME
+                    if name not in ['sessionUID', 'team_name']:
+                        if self.influxdb:
+                            influxdb_data.append(
+                                f'{packet_name},track={race_details.circuit},'
+                                f'lap={lap_number},session_uid={race_details.session_uid},'
+                                f'session_type={race_details.session_type}'
+                                f' {name}={value}'
+                            )
+
+                        if self.kafka:
+                            kafka_data = self.kafka.build_data(
+                                name=name,
+                                value=value,
+                                data=kafka_data
+                            )
+
+            if self.kafka:
+                kafka_msg = {
+                    'lap_number': lap_number,
+                    'circuit': race_details.circuit,
+                    'session_uid': race_details.session_uid,
+                    'session_type': race_details.session_type,
+                    'data': kafka_data
+                }
+                self.kafka.send(
+                    packet_name,
+                    json.dumps(kafka_msg).encode('utf-8')
+                )
+
+            if self.influxdb:
+                self.influxdb.write(influxdb_data)
 
 
 if __name__ == "__main__":
-    main()
+    config = load_config()
+    recorder = DataRecorder(config, port=20788)
+
+    recorder.listen()

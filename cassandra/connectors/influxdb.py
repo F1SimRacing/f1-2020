@@ -4,11 +4,11 @@ Connector for sending data to the time series database InfluxDB.
 See - https://www.influxdata.com/
 """
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 
 from influxdb_client.client.write_api import SYNCHRONOUS
 
-from cassandra.config import load_config
+from cassandra.config import load_config, InfluxDBConfiguration
 from influxdb_client import InfluxDBClient
 import logging
 
@@ -24,18 +24,17 @@ CONFIG_FILE_NAME: str = 'config.ini'
 
 class InfluxDBConnector:
 
-    def __init__(self, config_filename: str) -> None:
+    def __init__(self, config: InfluxDBConfiguration) -> None:
 
-        self.config_file_name: str = config_filename
+        self.config = config
         self._connection = None
         self._write_api = None
-        self.config = load_config()['influxdb']
 
     @property
     def connection(self) -> InfluxDBClient:
         if not self._connection:
-            self._connection = InfluxDBClient(url=self.config['host'],
-                                              token=self.config['token'])
+            self._connection = InfluxDBClient(url=self.config.host,
+                                              token=self.config.token)
         return self._connection
 
     @property
@@ -43,6 +42,19 @@ class InfluxDBConnector:
         if not self._write_api:
             self._write_api = self.connection.write_api(write_options=SYNCHRONOUS)
         return self._write_api
+
+    def record_pulse(self, reading: Dict):
+        return
+        # if reading:
+        #     print(f'{reading}')
+        #     data.append(
+        #         # f"health,tag=pulse pulse={reading['bpm']}"
+        #         f'health,track={race_details.circuit},'
+        #         f'lap={lap_number},session_uid={race_details.session_uid},'
+        #         f'session_type={race_details.session_type},'
+        #         f"stat=pulse pulse={reading['bpm']}"
+        #     )
+        # influx_conn.write(data)
 
     def write(self, data: List[str]):
         """
@@ -85,6 +97,5 @@ class InfluxDBConnector:
         # see https://github.com/influxdata/influxdb-client-python
 
         # write_api = self.connection.write_api(write_options=SYNCHRONOUS)
-        self.write_api.write(self.config['bucket'], self.config['org'],
-                                            data)
+        self.write_api.write(self.config.bucket, self.config.org, data)
         # async_result.get()
