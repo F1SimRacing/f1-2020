@@ -38,14 +38,13 @@ def load_config(filename: str = HOME / '.config' / 'cassandra' / CONFIG_FILE_NAM
         -> RecorderConfiguration:
     config = configparser.ConfigParser()
     config_file = Path(filename)
+    recorder_config = RecorderConfiguration()
 
     if config_file.is_file():
         config.read(filename)
     else:
         logger.error('Unable to fine config file.')
-        return RecorderConfiguration()
-
-    recorder_config = RecorderConfiguration()
+        return recorder_config
 
     for section in config.keys():
         if section == 'kafka':
