@@ -9,7 +9,9 @@ from cassandra.telemetry.heart_beat_monitor import SerialSensor, _detect_port
 from cassandra.connectors.kafka import KafkaConnector
 from cassandra.telemetry.source import Feed
 import logging
-
+from skimage import io
+import matplotlib.pyplot as plt
+from matplotlib.patches import Arrow, Circle
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,8 +35,8 @@ class DataRecorder:
     def __init__(self, config: RecorderConfiguration, port: int = 20777) -> None:
         self.configuration: RecorderConfiguration = config
         self.feed = Feed(port=port)
-        self.kafka: Union[KafkaConnector, None]
-        self.influxdb: Union[InfluxDBConnector, None]
+        self.kafka: Union[KafkaConnector, None] = None
+        self.influxdb: Union[InfluxDBConnector, None] = None
 
         if self.configuration.kafka:
             self.kafka = KafkaConnector("ultron:9092")
@@ -59,6 +61,9 @@ class DataRecorder:
 
         lap_number = 1
 
+        patches = []
+        li = []
+
         while True:
             packet, teammate = self.feed.get_latest()
 
@@ -78,6 +83,9 @@ class DataRecorder:
             # we are late, so spin until we find out which race we are at
             if not race_details:
                 continue
+
+            if packet["type"] == "PacketMotionData_V1":
+                pass
 
             if packet["type"] == "PacketLapData_V1":
                 lap_number = int(packet["currentLapNum"])
@@ -129,6 +137,6 @@ class DataRecorder:
 
 if __name__ == "__main__":
     config = load_config()
-    recorder = DataRecorder(config, port=20788)
+    recorder = DataRecorder(config, port=20778)
 
     recorder.listen()

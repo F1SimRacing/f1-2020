@@ -49,3 +49,51 @@ to select it.
 # Demo
 Youtube:
 * [Grafana Demo](https://youtu.be/zWDqIcY03e0)
+
+
+# Imaging Car Position
+
+```python
+# print(f'{packet["worldPositionX"]},{packet["worldPositionY"]},'
+#       f'{packet["worldPositionZ"]}')
+
+# print(f'{packet["worldPositionX"]}, {packet["worldPositionZ"]}')
+maze = io.imread('cassandra/track_layouts/Red_Bull_Ring.png')
+
+# g = ggplot(df) + geom_point(
+#     aes(x=NGPSLongitude, y=NGPSLatitude, col=sign(gLat),
+#         size=abs(gLat)))
+# print(g)
+
+# Pit Exit -48.612972259521484, 218.2395477294922
+# Turn 3 (-525.0587158203125, -450.0421142578125)
+
+# GPS: 47.220135, 14.760147
+# 47.226171, 14.754152
+
+ax, ay = 2, 442
+dx, dy = 0, 75
+cx, cy = 300, 750
+# Arrow(ay, ax, dy, dx, width=100., color='green'),
+
+patches.append(Circle((packet["worldPositionX"], packet["worldPositionZ"]), radius=2, color='red'))
+li.append((packet["worldPositionX"] + 95.8331072,
+           packet["worldPositionZ"] - 203.4794))
+if len(patches) > 500:
+    with open('data_gps.json', 'w') as file:
+        file.write(json.dumps(li))
+    # print()
+    plt.scatter(*zip(*li))
+    fig, ax = plt.subplots(1)
+    ax.imshow(maze)
+    for p in patches:
+        ax.add_patch(p)
+    plt.show()
+
+
+https://blog.ouseful.info/2012/03/14/plotting-latitude-and-longitude-with-ggplot-map-projections-in-r/
+```
+
+Pit Lane Exit Austria
+-48.612972259521484, 218.2395477294922
+GPS: 47.220135, 14.760147
