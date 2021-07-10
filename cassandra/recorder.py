@@ -1,6 +1,7 @@
 import json
 from typing import NamedTuple, List, Union
 from f1_2020_telemetry.types import TrackIDs
+from kafka.errors import NoBrokersAvailable
 
 from cassandra.config import RecorderConfiguration, load_config
 from cassandra.connectors.influxdb import InfluxDBConnector
@@ -26,18 +27,33 @@ class Race(NamedTuple):
 
 
 class DataRecorder:
-    kafka: Union[KafkaConnector, None]
-    influxdb: Union[InfluxDBConnector, None]
+    _kafka: Union[KafkaConnector, None] = None
+    _kafka_unavailable: bool = False
+    _influxdb: Union[InfluxDBConnector, None] = None
 
     def __init__(self, configuration: RecorderConfiguration, port: int = 20777) -> None:
         self.configuration: RecorderConfiguration = configuration
         self.feed = Feed(port=port)
 
-        if self.configuration.kafka:
-            self.kafka = KafkaConnector("ultron:9092")
+    @property
+    def kafka(self):
+        if not self._kafka and self.configuration.kafka and not self._kafka_unavailable:
+            try:
+                self._kafka = KafkaConnector(configuration=self.configuration.kafka)
+            except NoBrokersAvailable:
+                logger.error("No Kafka brokers available, skipping sending to Kafka.")
+                # Bypass Kafka next time round to avoid flooding the logs with errors.
+                self._kafka_unavailable = True
+        return self._kafka
 
-        if self.configuration.influxdb:
-            self.influxdb = InfluxDBConnector(self.configuration.influxdb)
+    @property
+    def influxdb(self):
+        if not self._influxdb and self.configuration.influxdb:
+            self._influxdb = InfluxDBConnector(
+                configuration=self.configuration.influxdb
+            )
+
+        return self._influxdb
 
     def write_to_influxdb(self, data: List) -> bool:
         if not self.influxdb:
@@ -96,35 +112,34 @@ class DataRecorder:
                             value = value.decode("utf-8")
 
                     # FIXME
-                    # if name not in ["sessionUID", "team_name"]:
-                    #     if self.influxdb:
-                    #         influxdb_data.append(
-                    #             f"{packet_name},track={race_details.circuit},"
-                    #             f"lap={lap_number},session_uid={race_details.session_uid},"
-                    #             f"session_type={race_details.session_type}"
-                    #             f" {name}={value}"
-                    #         )
-                    #
-                    #     if self.kafka:
-                    #         kafka_data = self.kafka.build_data(
-                    #             name=name, value=value, data=kafka_data
+                    if name not in ["sessionUID", "team_name"]:
+                        if self.influxdb:
+                            influxdb_data.append(
+                                f"{packet_name},track={race_details.circuit},"
+                                f"lap={lap_number},"
+                                f"session_uid={race_details.session_uid},"
+                                f"session_type={race_details.session_type}"
+                                f" {name}={value}"
+                            )
 
+                        if self.kafka:
+                            kafka_data = self.kafka.build_data(
+                                name=name, value=value, data=kafka_data
+                            )
 
-#                            )
+            if self.kafka:
+                kafka_msg = {
+                    "lap_number": lap_number,
+                    "circuit": race_details.circuit,
+                    "session_uid": race_details.session_uid,
+                    "session_type": race_details.session_type,
+                    "data": kafka_data,
+                }
+                if packet_name:
+                    self.kafka.send(packet_name, json.dumps(kafka_msg).encode("utf-8"))
 
-# if self.kafka:
-#     kafka_msg = {
-#         "lap_number": lap_number,
-#         "circuit": race_details.circuit,
-#         "session_uid": race_details.session_uid,
-#         "session_type": race_details.session_type,
-#         "data": kafka_data,
-#     }
-#     if packet_name:
-#         self.kafka.send(packet_name, json.dumps(kafka_msg).encode("utf-8"))
-#
-# if self.influxdb:
-#     self.influxdb.write(influxdb_data)
+            if self.influxdb:
+                self.influxdb.write(influxdb_data)
 
 
 if __name__ == "__main__":

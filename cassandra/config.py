@@ -72,7 +72,7 @@ def load_config(
     for section in config.keys():
         if section == "kafka":
             recorder_config.kafka = KafkaConfiguration(
-                config[section]["bootstrap_servers"]
+                bootstrap_servers=config[section]["bootstrap_servers"]
             )
 
         if section == "influxdb":
