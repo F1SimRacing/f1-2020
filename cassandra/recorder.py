@@ -26,8 +26,8 @@ class Race(NamedTuple):
 
 
 class DataRecorder:
-    def __init__(self, config: RecorderConfiguration, port: int = 20777) -> None:
-        self.configuration: RecorderConfiguration = config
+    def __init__(self, configuration: RecorderConfiguration, port: int = 20777) -> None:
+        self.configuration: RecorderConfiguration = configuration
         self.feed = Feed(port=port)
         self.kafka: Union[KafkaConnector, None]
         self.influxdb: Union[InfluxDBConnector, None]
@@ -47,12 +47,12 @@ class DataRecorder:
 
     def get_heart_rate(self):
         sensor_reader = SerialSensor(port=_detect_port())
-        reading = sensor_reader.read()
+        return sensor_reader.read()
 
     def listen(self):
         race_details = None
         logger.info("Starting server to receive telemetry data.")
-
+        packet_name: str = "unknown"
         lap_number = 1
 
         while True:
@@ -117,7 +117,8 @@ class DataRecorder:
                     "session_type": race_details.session_type,
                     "data": kafka_data,
                 }
-                self.kafka.send(packet_name, json.dumps(kafka_msg).encode("utf-8"))
+                if packet_name:
+                    self.kafka.send(packet_name, json.dumps(kafka_msg).encode("utf-8"))
 
             if self.influxdb:
                 self.influxdb.write(influxdb_data)
