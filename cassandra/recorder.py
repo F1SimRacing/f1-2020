@@ -5,7 +5,7 @@ from f1_2020_telemetry.types import TrackIDs
 from cassandra.config import RecorderConfiguration, load_config
 from cassandra.connectors.influxdb import InfluxDBConnector
 from cassandra.telemetry.constants import PACKET_MAPPER, SESSION_TYPE
-from cassandra.telemetry.heart_beat_monitor import SerialSensor, _detect_port
+from cassandra.connectors.heart_beat_monitor import SerialSensor, _detect_port
 from cassandra.connectors.kafka import KafkaConnector
 from cassandra.telemetry.source import Feed
 import logging
@@ -16,11 +16,7 @@ logging.basicConfig(
     format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-
 logger = logging.getLogger(__name__)
-
-SEND_TO_KAFKA = False
-SEND_TO_INFLUXDB = False
 
 
 class Race(NamedTuple):
