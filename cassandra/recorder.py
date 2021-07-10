@@ -26,11 +26,12 @@ class Race(NamedTuple):
 
 
 class DataRecorder:
+    kafka: Union[KafkaConnector, None]
+    influxdb: Union[InfluxDBConnector, None]
+
     def __init__(self, configuration: RecorderConfiguration, port: int = 20777) -> None:
         self.configuration: RecorderConfiguration = configuration
         self.feed = Feed(port=port)
-        self.kafka: Union[KafkaConnector, None]
-        self.influxdb: Union[InfluxDBConnector, None]
 
         if self.configuration.kafka:
             self.kafka = KafkaConnector("ultron:9092")
@@ -95,33 +96,35 @@ class DataRecorder:
                             value = value.decode("utf-8")
 
                     # FIXME
-                    if name not in ["sessionUID", "team_name"]:
-                        if self.influxdb:
-                            influxdb_data.append(
-                                f"{packet_name},track={race_details.circuit},"
-                                f"lap={lap_number},session_uid={race_details.session_uid},"
-                                f"session_type={race_details.session_type}"
-                                f" {name}={value}"
-                            )
+                    # if name not in ["sessionUID", "team_name"]:
+                    #     if self.influxdb:
+                    #         influxdb_data.append(
+                    #             f"{packet_name},track={race_details.circuit},"
+                    #             f"lap={lap_number},session_uid={race_details.session_uid},"
+                    #             f"session_type={race_details.session_type}"
+                    #             f" {name}={value}"
+                    #         )
+                    #
+                    #     if self.kafka:
+                    #         kafka_data = self.kafka.build_data(
+                    #             name=name, value=value, data=kafka_data
 
-                        if self.kafka:
-                            kafka_data = self.kafka.build_data(
-                                name=name, value=value, data=kafka_data
-                            )
 
-            if self.kafka:
-                kafka_msg = {
-                    "lap_number": lap_number,
-                    "circuit": race_details.circuit,
-                    "session_uid": race_details.session_uid,
-                    "session_type": race_details.session_type,
-                    "data": kafka_data,
-                }
-                if packet_name:
-                    self.kafka.send(packet_name, json.dumps(kafka_msg).encode("utf-8"))
+#                            )
 
-            if self.influxdb:
-                self.influxdb.write(influxdb_data)
+# if self.kafka:
+#     kafka_msg = {
+#         "lap_number": lap_number,
+#         "circuit": race_details.circuit,
+#         "session_uid": race_details.session_uid,
+#         "session_type": race_details.session_type,
+#         "data": kafka_data,
+#     }
+#     if packet_name:
+#         self.kafka.send(packet_name, json.dumps(kafka_msg).encode("utf-8"))
+#
+# if self.influxdb:
+#     self.influxdb.write(influxdb_data)
 
 
 if __name__ == "__main__":
