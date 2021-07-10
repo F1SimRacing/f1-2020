@@ -1,0 +1,3 @@
+"""
+Avro schemas for packets.
+"""

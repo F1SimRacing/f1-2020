@@ -22,9 +22,9 @@ logger = logging.getLogger(__name__)
 
 
 class InfluxDBConnector:
-    def __init__(self, config: InfluxDBConfiguration) -> None:
+    def __init__(self, configuration: InfluxDBConfiguration) -> None:
 
-        self.config = config
+        self.config = configuration
         self._connection = None
         self._write_api = None
 

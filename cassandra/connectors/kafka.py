@@ -1,6 +1,8 @@
-from typing import Dict
+from typing import Dict, List
 
 from kafka import KafkaProducer
+
+from cassandra.config import KafkaConfiguration
 
 
 class KafkaConnector:
@@ -8,11 +10,8 @@ class KafkaConnector:
     Send messages to Kafka.
     """
 
-    def __init__(self, host: str = None):
-
-        if not host:
-            host = "localhost:9092"
-        self.producer = KafkaProducer(bootstrap_servers=host)
+    def __init__(self, configuration: KafkaConfiguration):
+        self.producer = KafkaProducer(bootstrap_servers=configuration.bootstrap_servers)
 
     def send(self, topic, message):
         self.producer.send(topic, message)

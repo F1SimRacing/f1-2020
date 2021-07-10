@@ -1,3 +1,23 @@
+"""
+Configurations models for service setup.
+
+Currently supports:
+    * Kafka
+    * InfluxDB
+
+By default the config should be located in ~/.config/cassandra/config.ini
+
+Example file:
+[influxdb]
+host = 192.168.0.101:8086
+token = 8DxTEtW0PoCypTmxzXbSzTn8xPF39iiIVvW9bkvmf2wK2i6yth26dy-TabZp5IBAk
+org = F1
+bucket = telemetry_2020
+
+[kafka]
+bootstrap_servers = 192.168.0.102:9092
+"""
+
 import configparser
 
 from pathlib import Path
@@ -52,7 +72,7 @@ def load_config(
     for section in config.keys():
         if section == "kafka":
             recorder_config.kafka = KafkaConfiguration(
-                config[section]["bootstrap_servers"]
+                bootstrap_servers=config[section]["bootstrap_servers"]
             )
 
         if section == "influxdb":
