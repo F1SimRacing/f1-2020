@@ -1,10 +1,6 @@
-aiohttp_sse_client
-confluent-kafka[avro]
+click~=8.0.1
 f1_2020_telemetry
 fastavro
-flask-sse
-gevent
-gunicorn
 influxdb-client
 kafka-python
 pyserial

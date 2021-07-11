@@ -1,16 +1,15 @@
 import json
-from typing import NamedTuple, List, Union
-from f1_2020_telemetry.types import TrackIDs
-from kafka.errors import NoBrokersAvailable
-
-from cassandra.config import RecorderConfiguration, load_config
-from cassandra.connectors.influxdb import InfluxDBConnector
-from cassandra.telemetry.constants import PACKET_MAPPER, SESSION_TYPE
-from cassandra.connectors.heart_beat_monitor import SerialSensor, _detect_port
-from cassandra.connectors.kafka import KafkaConnector
-from cassandra.telemetry.source import Feed
 import logging
+from typing import List, NamedTuple, Union
 
+from f1_2020_telemetry.types import TrackIDs
+
+from cassandra.config import RecorderConfiguration
+from cassandra.connectors.heart_beat_monitor import SerialSensor, _detect_port
+from cassandra.connectors.influxdb import InfluxDBConnector
+from cassandra.connectors.kafka import KafkaConnector
+from cassandra.telemetry.constants import PACKET_MAPPER, SESSION_TYPE
+from cassandra.telemetry.source import Feed
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,15 +33,13 @@ class DataRecorder:
     def __init__(self, configuration: RecorderConfiguration, port: int = 20777) -> None:
         self.configuration: RecorderConfiguration = configuration
         self.feed = Feed(port=port)
+        self.port = port
 
     @property
     def kafka(self):
         if not self._kafka and self.configuration.kafka and not self._kafka_unavailable:
-            try:
-                self._kafka = KafkaConnector(configuration=self.configuration.kafka)
-            except NoBrokersAvailable:
-                logger.error("No Kafka brokers available, skipping sending to Kafka.")
-                # Bypass Kafka next time round to avoid flooding the logs with errors.
+            self._kafka = KafkaConnector(configuration=self.configuration.kafka)
+            if not self._kafka.in_error:
                 self._kafka_unavailable = True
         return self._kafka
 
@@ -68,7 +65,7 @@ class DataRecorder:
 
     def listen(self):
         race_details = None
-        logger.info("Starting server to receive telemetry data.")
+        logger.info(f"Starting server to receive telemetry data on port: {self.port}.")
         packet_name: str = "unknown"
         lap_number = 1
 
@@ -140,10 +137,3 @@ class DataRecorder:
 
             if self.influxdb:
                 self.influxdb.write(influxdb_data)
-
-
-if __name__ == "__main__":
-    config = load_config()
-    recorder = DataRecorder(config, port=20788)
-
-    recorder.listen()
