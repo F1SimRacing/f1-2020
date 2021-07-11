@@ -19,7 +19,18 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=["f1_2020_telemetry"],
+    install_requires=[
+        "f1_2020_telemetry",
+        "click",
+        "fastavro",
+        "influxdb-client",
+        "kafka-python",
+        "pyserial",
+    ],
     include_package_data=True,
-    entry_points={"console_scripts": ["cassandra-recorder=cassandra.recorder:main",]},
+    entry_points={
+        "console_scripts": [
+            "cassandra-recorder=cassandra.main:run",
+        ]
+    },
 )
