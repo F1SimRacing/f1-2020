@@ -13,8 +13,8 @@ from cassandra.telemetry.source import Feed
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+    format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
 )
 logger = logging.getLogger(__name__)
 
@@ -65,8 +65,8 @@ class DataRecorder:
 
     def listen(self):
         race_details = None
-        logger.info(f"Starting server to receive telemetry data on port: {self.port}.")
-        packet_name: str = "unknown"
+        logger.info(f'Starting server to receive telemetry data on port: {self.port}.')
+        packet_name: str = 'unknown'
         lap_number = 1
 
         while True:
@@ -78,45 +78,45 @@ class DataRecorder:
             influxdb_data = []
             kafka_data = {}
 
-            if packet["type"] == "PacketSessionData_V1" and not race_details:
+            if packet['type'] == 'PacketSessionData_V1' and not race_details:
                 race_details = Race(
-                    circuit=TrackIDs[packet["trackId"]],
-                    session_type=SESSION_TYPE[packet["sessionType"]],
-                    session_uid=packet["sessionUID"],
+                    circuit=TrackIDs[packet['trackId']],
+                    session_type=SESSION_TYPE[packet['sessionType']],
+                    session_uid=packet['sessionUID'],
                 )
 
             # we are late, so spin until we find out which race we are at
             if not race_details:
                 continue
 
-            if packet["type"] == "PacketLapData_V1":
-                lap_number = int(packet["currentLapNum"])
+            if packet['type'] == 'PacketLapData_V1':
+                lap_number = int(packet['currentLapNum'])
 
-            if packet["type"] in PACKET_MAPPER.keys():
-                packet_name: str = "unknown"
+            if packet['type'] in PACKET_MAPPER.keys():
+                packet_name: str = 'unknown'
 
                 for name, value in packet.items():
 
-                    if name == "name":
+                    if name == 'name':
                         packet_name = value
 
-                    if name in ["type", "mfdPanelIndex", "buttonStatus", "name"]:
+                    if name in ['type', 'mfdPanelIndex', 'buttonStatus', 'name']:
                         continue
 
                     # drivers name are bytes
-                    if name == "name" and packet["type"] == "PacketParticipantsData_V1":
+                    if name == 'name' and packet['type'] == 'PacketParticipantsData_V1':
                         if type(value) == bytes:
-                            value = value.decode("utf-8")
+                            value = value.decode('utf-8')
 
                     # FIXME
-                    if name not in ["sessionUID", "team_name"]:
+                    if name not in ['sessionUID', 'team_name']:
                         if self.influxdb:
                             influxdb_data.append(
-                                f"{packet_name},track={race_details.circuit},"
-                                f"lap={lap_number},"
-                                f"session_uid={race_details.session_uid},"
-                                f"session_type={race_details.session_type}"
-                                f" {name}={value}"
+                                f'{packet_name},track={race_details.circuit},'
+                                f'lap={lap_number},'
+                                f'session_uid={race_details.session_uid},'
+                                f'session_type={race_details.session_type}'
+                                f' {name}={value}'
                             )
 
                         if self.kafka:
@@ -126,14 +126,14 @@ class DataRecorder:
 
             if self.kafka:
                 kafka_msg = {
-                    "lap_number": lap_number,
-                    "circuit": race_details.circuit,
-                    "session_uid": race_details.session_uid,
-                    "session_type": race_details.session_type,
-                    "data": kafka_data,
+                    'lap_number': lap_number,
+                    'circuit': race_details.circuit,
+                    'session_uid': race_details.session_uid,
+                    'session_type': race_details.session_type,
+                    'data': kafka_data,
                 }
                 if packet_name:
-                    self.kafka.send(packet_name, json.dumps(kafka_msg).encode("utf-8"))
+                    self.kafka.send(packet_name, json.dumps(kafka_msg).encode('utf-8'))
 
             if self.influxdb:
                 self.influxdb.write(influxdb_data)
