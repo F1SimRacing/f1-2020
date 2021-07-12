@@ -1,0 +1,15 @@
+{
+  "type": "PacketParticipantsData_V1",
+  "name": "participants",
+  "sessionTime": 263.9958801269531,
+  "sessionUID": 15663863318133384886,
+  "teammate": 6,
+  "team_name": "McLaren",
+  "numActiveCars": 18,
+  "aiControlled": 1,
+  "driverId": 54,
+  "teamId": 8,
+  "raceNumber": 4,
+  "nationality": 10,
+  "yourTelemetry": 1
+}
